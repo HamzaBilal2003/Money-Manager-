@@ -40,12 +40,23 @@ function shell(content){
  </nav><div class="sidebar-bottom">Your data stays on this device.<br>Offline-ready & privacy-first.</div>
  </aside><main class="main">${content}</main></div></div>`;
 }
+function ensureLayout(){
+ if(document.querySelector("#page-content"))return;
+ const host=document.querySelector("body > main.main");
+ if(!host)return;
+ host.outerHTML=shell(`<div id="page-content"></div>`);
+}
+function setPageContent(content){
+ const mount=document.querySelector("#page-content")||document.querySelector(".main");
+ if(mount) mount.innerHTML=content;
+}
 function statCard(label,value,note){return `<div class="card"><div class="stat-label">${label}</div><div class="stat-value">${value}</div><div class="stat-note">${note}</div></div>`}
 function modal(title,body,actions){return `<div class="modal-backdrop" data-close><div class="modal"><div class="modal-head"><h3>${title}</h3><button class="icon-btn" data-close>×</button></div>${body}${actions?`<div class="modal-actions">${actions}</div>`:""}</div></div>`}
 
 async function init(){
  const state=await load(); nav();
  if(!state.budget && page!=="setup"){go("setup.html");return}
+ ensureLayout();
  if(page==="dashboard") renderDashboard(state);
  if(page==="history") renderHistory(state);
  if(page==="category") renderCategory(state);
@@ -88,33 +99,33 @@ function renderDashboard(s){
  <div class="section-head"><div class="section-title">Categories</div><button class="btn btn-primary" data-action="newBudget">＋ Manage budget</button></div>
  <div class="category-list">${b.types.length?b.types.map(catCard).join(""):`<div class="empty" style="grid-column:1/-1">No categories yet.</div>`}</div>
  <div class="section-head"><div class="section-title">Finish month</div></div><div class="card"><div class="row" style="align-items:center;justify-content:space-between"><div><b>Archive this budget</b><div class="muted" style="font-size:12px;margin-top:4px">Save it to history and start a clean month.</div></div><button class="btn btn-danger" data-action="confirmEnd">End & archive</button></div></div>`;
- document.querySelector(".main").innerHTML=content;nav();
+ setPageContent(content);nav();
 }
 function catCard(t){const pct=t.allocated?Math.min(100,t.spent/t.allocated*100):0,over=t.spent>t.allocated;return `<div class="category" data-action="openCategory" data-id="${t.id}"><div class="cat-head"><div class="cat-name"><span class="dot" style="background:${t.color}"></span>${esc(t.name)}</div><button class="icon-btn" data-action="addExpense" data-id="${t.id}" style="width:34px;height:34px">＋</button></div><div class="cat-amounts"><span>$${money(t.spent)} / $${money(t.allocated)}</span><span class="cat-left" style="color:${over?"var(--danger)":"var(--green-700)"}">$${money(t.allocated-t.spent)} left</span></div><div class="bar"><i style="width:${pct}%;background:${over?"var(--danger)":t.color}"></i></div></div>`}
 function renderHistory(s){
  const total=s.history.reduce((a,h)=>a+Number(h.remaining||0),0);
- document.querySelector(".main").innerHTML=`<div class="topbar"><div><div class="eyebrow">Archive</div><h1 class="page-title">Budget history</h1><div class="page-subtitle">Every closed month, kept locally on this device.</div></div><button class="btn btn-primary" data-action="newBudget">＋ New budget</button></div>
+ setPageContent(`<div class="topbar"><div><div class="eyebrow">Archive</div><h1 class="page-title">Budget history</h1><div class="page-subtitle">Every closed month, kept locally on this device.</div></div><button class="btn btn-primary" data-action="newBudget">＋ New budget</button></div>
  <div class="grid grid-3">${statCard("Closed budgets",s.history.length,"Archived months")}${statCard("Total allocated","$"+money(s.history.reduce((a,h)=>a+h.allocated,0)),"All archived budgets")}${statCard("Net remaining","$"+money(total),"Across closed months")}</div>
  <div class="section-head"><div class="section-title">Past budgets</div></div>
- <div class="grid">${s.history.length?s.history.map(h=>`<div class="card history-item"><div><div class="history-title">${esc(h.name)}</div><div class="muted" style="font-size:12px;margin-top:5px">Closed ${fmtDate(h.closedDate)}</div><div class="chips">${h.types.map(t=>`<span class="chip" style="background:${t.color}18;color:${t.color}">${esc(t.name)}</span>`).join("")}</div></div><div style="text-align:right"><div class="muted" style="font-size:11px">Remaining</div><b style="font-size:20px;color:${h.remaining<0?"var(--danger)":"var(--green-700)"}">$${money(h.remaining)}</b></div></div>`).join(""):`<div class="empty">No archived budgets yet.<br>End your current month to create the first entry.</div>`}</div>`;nav();
+ <div class="grid">${s.history.length?s.history.map(h=>`<div class="card history-item"><div><div class="history-title">${esc(h.name)}</div><div class="muted" style="font-size:12px;margin-top:5px">Closed ${fmtDate(h.closedDate)}</div><div class="chips">${h.types.map(t=>`<span class="chip" style="background:${t.color}18;color:${t.color}">${esc(t.name)}</span>`).join("")}</div></div><div style="text-align:right"><div class="muted" style="font-size:11px">Remaining</div><b style="font-size:20px;color:${h.remaining<0?"var(--danger)":"var(--green-700)"}">$${money(h.remaining)}</b></div></div>`).join(""):`<div class="empty">No archived budgets yet.<br>End your current month to create the first entry.</div>`}</div>`);nav();
 }
 function renderCategory(s){
  window.__state=s;const id=new URLSearchParams(location.search).get("id"),t=s.budget?.types.find(x=>x.id===id);if(!t){go("dashboard.html");return}
  const pct=t.allocated?Math.min(100,t.spent/t.allocated*100):0,remaining=t.allocated-t.spent;
- document.querySelector(".main").innerHTML=`<div class="topbar"><div><div class="eyebrow">Category</div><h1 class="page-title"><span class="dot" style="background:${t.color}"></span>${esc(t.name)}</h1><div class="page-subtitle">Detailed expense tracking</div></div><div class="actions"><button class="btn optional" data-action="dashboard">← Dashboard</button><button class="btn" data-action="editType" data-id="${t.id}">Edit</button></div></div>
+ setPageContent(`<div class="topbar"><div><div class="eyebrow">Category</div><h1 class="page-title"><span class="dot" style="background:${t.color}"></span>${esc(t.name)}</h1><div class="page-subtitle">Detailed expense tracking</div></div><div class="actions"><button class="btn optional" data-action="dashboard">← Dashboard</button><button class="btn" data-action="editType" data-id="${t.id}">Edit</button></div></div>
  <div class="grid grid-3">${statCard("Allocated","$"+money(t.allocated),"Category budget")}${statCard("Spent","$"+money(t.spent),"Recorded expenses")}${statCard("Remaining","$"+money(remaining),remaining<0?"Over budget":"Available")}</div>
  <div class="card" style="margin-top:16px"><div class="section-title">Budget usage</div><div class="bar" style="height:9px;margin-top:14px"><i style="width:${pct}%;background:${remaining<0?"var(--danger)":t.color}"></i></div><div class="muted" style="font-size:12px;margin-top:8px">${pct.toFixed(0)}% used</div></div>
  <div class="section-head"><div class="section-title">Expense history</div><button class="btn btn-primary" data-action="addExpense" data-id="${t.id}">＋ Add expense</button></div>
  <div class="card" style="padding:7px 15px">${t.expenses.length?`<table class="table"><thead><tr><th>Amount</th><th>Note</th><th>Date</th><th></th></tr></thead><tbody>${t.expenses.map(e=>`<tr><td><b>$${money(e.amount)}</b></td><td>${esc(e.note||"—")}</td><td>${fmtDate(e.date)}</td><td style="text-align:right"><button class="icon-btn" data-action="deleteExpense" data-type="${t.id}" data-exp="${e.id}">×</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty" style="margin:8px">No expenses recorded yet.</div>`}</div>
- <div style="margin-top:18px"><button class="btn btn-danger" data-action="confirmDelete" data-id="${t.id}">Delete category</button></div>`;nav();
+ <div style="margin-top:18px"><button class="btn btn-danger" data-action="confirmDelete" data-id="${t.id}">Delete category</button></div>`);nav();
 }
 function renderSetup(s){
  const previous=s.history?.[0];const rows=window.__setupRows||(previous?.types?.length?previous.types.map(t=>({name:t.name,allocated:String(t.allocated),color:t.color})): [{name:"Food",allocated:"",color:COLORS[6]},{name:"Transport",allocated:"",color:COLORS[5]},{name:"Household",allocated:"",color:COLORS[0]}]);
  window.__setupRows=rows;
- document.querySelector(".main").innerHTML=`<div class="setup-wrap"><div class="setup-logo">₿</div><div class="eyebrow" style="margin-top:20px">Budget setup</div><h1 class="setup-title">${s.budget?"Create another budget":"Take control of your money."}</h1><p class="setup-copy">Create a clean monthly plan, divide it into categories, and record expenses as they happen. Everything is stored locally for offline use.</p>
+ setPageContent(`<div class="setup-wrap"><div class="setup-logo">₿</div><div class="eyebrow" style="margin-top:20px">Budget setup</div><h1 class="setup-title">${s.budget?"Create another budget":"Take control of your money."}</h1><p class="setup-copy">Create a clean monthly plan, divide it into categories, and record expenses as they happen. Everything is stored locally for offline use.</p>
  <div class="card form"><div class="field"><label class="label">Budget name</label><input class="input" id="setup-name" value="${esc(window.__setupName||(previous?.name?previous.name.replace(/\b\d{4}\b/,""):""))}" placeholder="e.g. September 2026"></div>
  <div class="section-head" style="margin-top:5px"><div class="section-title">Categories</div><div class="muted" id="setup-total">$0.00</div></div>
- <div id="setup-rows">${rows.map((r,i)=>setupRow(r,i)).join("")}</div><button class="btn" id="add-row" style="width:100%">＋ Add category</button><button class="btn btn-primary" id="start-budget" style="width:100%;margin-top:10px">Start budget →</button></div></div>`;
+ <div id="setup-rows">${rows.map((r,i)=>setupRow(r,i)).join("")}</div><button class="btn" id="add-row" style="width:100%">＋ Add category</button><button class="btn btn-primary" id="start-budget" style="width:100%;margin-top:10px">Start budget →</button></div></div>`);
  updateSetupTotal();bindSetup();
 }
 function setupRow(r,i){return `<div class="category-row"><input class="color-input" type="color" value="${r.color}" data-color="${i}"><input class="input" data-name="${i}" value="${esc(r.name)}" placeholder="Category name"><input class="input" data-amount="${i}" value="${esc(r.allocated)}" type="number" min="0" step="0.01" placeholder="Amount"><button class="icon-btn" data-remove="${i}">×</button></div>`}
