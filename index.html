@@ -50,8 +50,10 @@
   .section{padding:18px 16px 4px;}
   .label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin:4px 0 6px;}
   .input{width:100%;padding:11px 12px;border-radius:10px;border:1.5px solid var(--border);font-size:14.5px;margin-bottom:14px;background:#fff;color:var(--text);outline:none;}
-  .row-input{flex:1;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:13.5px;background:#fff;color:var(--text);outline:none;}
-  .type-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .row-input{flex:1;min-width:0;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:13.5px;background:#fff;color:var(--text);outline:none;}
+  .type-row{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+  .type-row .color-dot{flex-shrink:0;}
+  .type-row .row-input[type="number"]{flex:0 1 64px;}
   .color-dot{width:26px;height:26px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;}
   .add-row-btn{display:flex;align-items:center;gap:6px;justify-content:center;width:100%;padding:10px;border-radius:10px;border:1.5px dashed #B7CFC1;background:transparent;color:var(--green);font-weight:600;font-size:13.5px;margin-top:4px;margin-bottom:8px;}
   .primary-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:none;background:var(--green);color:#fff;font-weight:700;font-size:14.5px;margin-top:6px;}
@@ -322,7 +324,7 @@ function renderSetup(){
       <div class="type-row">
         <button class="color-dot" style="background:${t.color}" data-action="cycleSetupColor" data-idx="${i}"></button>
         <input class="row-input" placeholder="Category name" value="${esc(t.name)}" oninput="S.setupRows[${i}].name=this.value" />
-        <input class="row-input" style="max-width:90px;text-align:right;" placeholder="0" type="number" inputmode="decimal" value="${esc(t.allocated)}" oninput="S.setupRows[${i}].allocated=this.value" onchange="render()" />
+        <input class="row-input" style="text-align:right;" placeholder="0" type="number" inputmode="decimal" value="${esc(t.allocated)}" oninput="S.setupRows[${i}].allocated=this.value" onchange="render()" />
         <button class="icon-btn-ghost" data-action="removeSetupRow" data-idx="${i}">✕</button>
       </div>
     `).join("")}
